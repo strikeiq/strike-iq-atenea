@@ -34,9 +34,9 @@ export default async function DashboardPage() {
 
   const stats = {
     totalJugadores: totalJugadores ?? 0,
-    totalDepositado: statsData?.reduce((s, r) => s + (r.total_depositado || 0), 0) ?? 0,
-    totalRetirado: statsData?.reduce((s, r) => s + (r.total_retirado || 0), 0) ?? 0,
-    gananciaCasino: statsData?.reduce((s, r) => s + (r.ganancia_casino || 0), 0) ?? 0,
+    totalDepositado: statsData?.reduce((s: number, r) => s + (r.total_depositado || 0), 0) ?? 0,
+    totalRetirado: statsData?.reduce((s: number, r) => s + (r.total_retirado || 0), 0) ?? 0,
+    gananciaCasino: statsData?.reduce((s: number, r) => s + (r.ganancia_casino || 0), 0) ?? 0,
     jugadoresActivos30d: statsData?.length ?? 0,
     jugadoresActivos7d: new Set(actividad7d?.map(r => r.fecha)).size ?? 0,
   }
