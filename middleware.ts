@@ -24,6 +24,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
+  // /cajero es accesible sin login
+  if (pathname.startsWith('/cajero')) return supabaseResponse
+
   // Redirigir a login si no está autenticado
   if (!user && pathname !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url))
