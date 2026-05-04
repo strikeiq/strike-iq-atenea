@@ -197,34 +197,78 @@ function GestorInner({ profile, historialInicial }: {
     setMultiSaving(false)
   }
 
-  // CRM Import: parse CSV del CRM con regex PRINCI/WEBCHAT
+  // CRM Import: parse CSV del CRM — detecta PRINCI/Principal, WEBCHAT (Etiquetas), Soporte Atenea
   async function procesarCRM(file: File) {
     const text = await file.text()
-    const lines = text.split('\n')
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
-    const colNombre = headers.findIndex(h => h === 'Nombre')
-    const colSesiones = headers.findIndex(h => h === 'Sesiones')
+
+    // Parser simple respetando campos entre comillas con saltos de línea internos
+    function parseCsvLine(line: string): string[] {
+      const result: string[] = []
+      let cur = '', inQ = false
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i]
+        if (c === '"') { inQ = !inQ }
+        else if (c === ',' && !inQ) { result.push(cur.trim()); cur = '' }
+        else { cur += c }
+      }
+      result.push(cur.trim())
+      return result
+    }
+
+    // Juntar líneas partidas por campos multi-línea
+    const rawLines: string[] = []
+    let buf = ''
+    let quotes = 0
+    for (const ch of text) {
+      if (ch === '"') quotes++
+      if (ch === '\n' && quotes % 2 === 0) { rawLines.push(buf); buf = ''; quotes = 0 }
+      else buf += ch
+    }
+    if (buf) rawLines.push(buf)
+
+    const headers = parseCsvLine(rawLines[0]).map(h => h.replace(/^"|"$/g, ''))
+    const colNombre    = headers.findIndex(h => h === 'Nombre')
+    const colSesiones  = headers.findIndex(h => h === 'Sesiones')
+    const colEtiquetas = headers.findIndex(h => h === 'Etiquetas')
+
     if (colNombre === -1 || colSesiones === -1) {
       setCrmMsg({ type: 'err', text: 'El CSV debe tener columnas "Nombre" y "Sesiones"' }); return
     }
-    const pPrinci  = /\bPRINCI(?:PAL)?\s*(\d{1,4})\b/gi
-    const pWebchat = /\bWEB\s*CHAT\s*(\d{1,4})\b|\bWEBCHAT(\d{1,4})\b/gi
+
+    const pPrinci  = /\b(?:PRINCI(?:PAL)?)\s*(\d{1,4})\b/gi
+    const pWebchat = /\bWEBCHAT\b/i
+    const pSoporte = /\bSOPORTE\s+ATENEA\b/i
+
     const rows: { jugador: string; tipo: string; numero: number }[] = []
 
-    for (const line of lines.slice(1)) {
+    for (const line of rawLines.slice(1)) {
       if (!line.trim()) continue
-      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
-      const nombre = cols[colNombre]
-      const sesiones = cols[colSesiones] || ''
+      const cols = parseCsvLine(line)
+      const nombre    = (cols[colNombre]    || '').replace(/^"|"$/g, '').trim()
+      const sesiones  = (cols[colSesiones]  || '').replace(/^"|"$/g, '').trim()
+      const etiquetas = colEtiquetas >= 0 ? (cols[colEtiquetas] || '').replace(/^"|"$/g, '').trim() : ''
       if (!nombre) continue
+
+      // PRINCI / Principal con número (de Sesiones)
       let m
       pPrinci.lastIndex = 0
-      while ((m = pPrinci.exec(sesiones)) !== null) rows.push({ jugador: nombre, tipo: 'princi', numero: parseInt(m[1]) })
-      pWebchat.lastIndex = 0
-      while ((m = pWebchat.exec(sesiones)) !== null) rows.push({ jugador: nombre, tipo: 'webchat', numero: parseInt(m[1] || m[2]) })
+      while ((m = pPrinci.exec(sesiones)) !== null) {
+        rows.push({ jugador: nombre, tipo: 'princi', numero: parseInt(m[1]) })
+      }
+
+      // WEBCHAT (de Etiquetas)
+      if (pWebchat.test(etiquetas)) {
+        rows.push({ jugador: nombre, tipo: 'webchat', numero: 1 })
+      }
+
+      // Soporte Atenea (de Sesiones, sin número)
+      if (pSoporte.test(sesiones)) {
+        rows.push({ jugador: nombre, tipo: 'soporte_atenea', numero: 1 })
+      }
     }
+
     setCrmPreview(rows)
-    if (rows.length === 0) setCrmMsg({ type: 'err', text: 'No se detectaron PRINCI ni WEBCHAT en el archivo' })
+    if (rows.length === 0) setCrmMsg({ type: 'err', text: 'No se detectaron sesiones en el archivo' })
     else setCrmMsg(null)
   }
 
@@ -521,13 +565,24 @@ function GestorInner({ profile, historialInicial }: {
                       <tr><th>Jugador</th><th>Tipo</th><th>Número</th></tr>
                     </thead>
                     <tbody>
-                      {crmPreview.slice(0, 50).map((r, i) => (
-                        <tr key={i}>
-                          <td>{r.jugador}</td>
-                          <td><span className="badge" style={{ background: '#1e3a1e', color: '#22c55e' }}>{r.tipo.toUpperCase()}</span></td>
-                          <td className="mono">{r.numero}</td>
-                        </tr>
-                      ))}
+                      {crmPreview.slice(0, 50).map((r, i) => {
+                        const badgeStyle =
+                          r.tipo === 'princi'        ? { background: '#1e3a1e', color: '#22c55e' } :
+                          r.tipo === 'webchat'       ? { background: '#1e2a3a', color: '#60a5fa' } :
+                          r.tipo === 'soporte_atenea'? { background: '#2a1e3a', color: '#c084fc' } :
+                          { background: '#2a2a1e', color: '#fbbf24' }
+                        const label =
+                          r.tipo === 'princi'         ? `PRINCI ${r.numero}` :
+                          r.tipo === 'webchat'        ? 'WEBCHAT' :
+                          r.tipo === 'soporte_atenea' ? 'SOPORTE ATENEA' : r.tipo.toUpperCase()
+                        return (
+                          <tr key={i}>
+                            <td>{r.jugador}</td>
+                            <td><span className="badge" style={badgeStyle}>{label}</span></td>
+                            <td className="mono">{r.tipo === 'princi' ? r.numero : '—'}</td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
