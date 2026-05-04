@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/types'
 
@@ -10,7 +10,7 @@ const NAV_ADMIN = [
   { href: '/gestor',    label: 'Gestor Bonos', icon: '◆' },
   { href: '/jugadores', label: 'Jugadores', icon: '◉' },
   { href: '/reportes',  label: 'Cargar reporte', icon: '↑' },
-  { href: '/importar',  label: 'Importar CRM', icon: '⇄' },
+  { href: '/gestor?tab=importar', label: 'Importar CRM', icon: '⇄' },
 ]
 
 const NAV_CAJERO = [
@@ -19,9 +19,18 @@ const NAV_CAJERO = [
 
 export default function Sidebar({ profile }: { profile: Profile }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const supabase = createClient()
   const nav = profile?.role === 'admin' ? NAV_ADMIN : NAV_CAJERO
+
+  function isActive(href: string) {
+    const [hrefPath, hrefQuery] = href.split('?')
+    if (pathname !== hrefPath) return false
+    if (!hrefQuery) return !searchParams.get('tab')
+    const params = new URLSearchParams(hrefQuery)
+    return params.get('tab') === searchParams.get('tab')
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -63,7 +72,7 @@ export default function Sidebar({ profile }: { profile: Profile }) {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
         {nav.map(item => {
-          const active = pathname === item.href
+          const active = isActive(item.href)
           return (
             <Link key={item.href} href={item.href} style={{
               display: 'flex',

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TIPOS_BONO, CATEGORIAS_BONO, type TipoBono, type Contacto, type Profile, type Jugador } from '@/lib/types'
 import { format } from 'date-fns'
@@ -67,12 +68,14 @@ function PlayerCard({ jugador, bono }: { jugador: Jugador; bono: any }) {
 }
 
 // ── Main component ────────────────────────────────────────────────
-export default function GestorClient({ profile, historialInicial }: {
+function GestorInner({ profile, historialInicial }: {
   profile: Profile
   historialInicial: Contacto[]
 }) {
+  const searchParams = useSearchParams()
+  const initialTab = (searchParams.get('tab') as any) || 'individual'
   const supabase = createClient()
-  const [tab, setTab] = useState<'individual' | 'multiple' | 'importar' | 'historial' | 'eliminar'>('individual')
+  const [tab, setTab] = useState<'individual' | 'multiple' | 'importar' | 'historial' | 'eliminar'>(initialTab)
 
   // Individual form state
   const [busqueda, setBusqueda] = useState('')
@@ -600,6 +603,14 @@ export default function GestorClient({ profile, historialInicial }: {
         </div>
       )}
     </div>
+  )
+}
+
+export default function GestorClient(props: { profile: Profile; historialInicial: Contacto[] }) {
+  return (
+    <Suspense fallback={null}>
+      <GestorInner {...props} />
+    </Suspense>
   )
 }
 
