@@ -9,6 +9,11 @@ function fmt(n: number) {
   return `$${Math.round(n).toLocaleString()}`
 }
 
+function pct(n: number) {
+  if (n == null) return '—'
+  return `${Math.round(n)}%`
+}
+
 export default function JugadoresClient({ jugadores }: { jugadores: any[] }) {
   const [search, setSearch] = useState('')
   const [tipoBono, setTipoBono] = useState('')
@@ -49,7 +54,7 @@ export default function JugadoresClient({ jugadores }: { jugadores: any[] }) {
   }
 
   function exportar() {
-    const cols = ['jugador','primera_tx','ultima_tx','dias_sin_cargar','total_depositado','total_retirado','ganancia_casino','cantidad_cargas','tipo_bono','categoria_bono','princi']
+    const cols = ['jugador','primera_tx','ultima_tx','dias_sin_cargar','total_depositado','total_retirado','ganancia_casino','cantidad_cargas','wager_total','promedio_por_carga','pct_retiro','hl','remarketing','rango_horario','hora_mas_frecuente','dia_tipico_carga','racha_activa_dias','fin_racha_activa','solo_una_carga','tipo_bono','categoria_bono','princi','ejecutivo']
     const csv = [cols.join(','), ...filtrados.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
@@ -111,9 +116,21 @@ export default function JugadoresClient({ jugadores }: { jugadores: any[] }) {
                 {colHeader('Retirado', 'total_retirado')}
                 {colHeader('Ganancia', 'ganancia_casino')}
                 {colHeader('Cargas', 'cantidad_cargas')}
+                {colHeader('Wager total', 'wager_total')}
+                {colHeader('Prom. carga', 'promedio_por_carga')}
+                {colHeader('% Retiro', 'pct_retiro')}
+                {colHeader('HL', 'hl')}
+                {colHeader('Remarketing', 'remarketing')}
+                {colHeader('Rango horario', 'rango_horario')}
+                {colHeader('Hora frecuente', 'hora_mas_frecuente')}
+                {colHeader('Día típico', 'dia_tipico_carga')}
+                {colHeader('Racha activa', 'racha_activa_dias')}
+                {colHeader('Fin racha', 'fin_racha_activa')}
+                <th>Solo 1 carga</th>
                 <th>Tipo bono</th>
                 <th>Cat.</th>
                 <th>PRINCI</th>
+                <th>Ejecutivo</th>
               </tr>
             </thead>
             <tbody>
@@ -134,6 +151,19 @@ export default function JugadoresClient({ jugadores }: { jugadores: any[] }) {
                     {fmt(j.ganancia_casino)}
                   </td>
                   <td className="mono">{j.cantidad_cargas ?? 0}</td>
+                  <td className="mono">{fmt(j.wager_total)}</td>
+                  <td className="mono">{fmt(j.promedio_por_carga)}</td>
+                  <td className="mono">{pct(j.pct_retiro)}</td>
+                  <td className="mono" style={{ fontSize: '12px' }}>{j.hl || '—'}</td>
+                  <td className="mono" style={{ fontSize: '12px' }}>{j.remarketing || '—'}</td>
+                  <td className="mono" style={{ fontSize: '12px' }}>{j.rango_horario || '—'}</td>
+                  <td className="mono" style={{ fontSize: '12px' }}>{j.hora_mas_frecuente ?? '—'}</td>
+                  <td className="mono" style={{ fontSize: '12px' }}>{j.dia_tipico_carga || '—'}</td>
+                  <td className="mono">{j.racha_activa_dias ?? '—'}</td>
+                  <td className="mono" style={{ fontSize: '12px', color: '#71717a' }}>
+                    {j.fin_racha_activa ? format(new Date(j.fin_racha_activa + 'T00:00:00'), 'dd/MM/yy') : '—'}
+                  </td>
+                  <td className="mono" style={{ fontSize: '12px' }}>{j.solo_una_carga ? 'Sí' : 'No'}</td>
                   <td>
                     {j.tipo_bono ? (
                       <span className="badge" style={{ fontSize: '10px', background: '#1a2e1a', color: '#22c55e' }}>
@@ -143,10 +173,11 @@ export default function JugadoresClient({ jugadores }: { jugadores: any[] }) {
                   </td>
                   <td className="mono" style={{ fontSize: '12px' }}>{j.categoria_bono || '—'}</td>
                   <td className="mono" style={{ fontSize: '12px', color: '#71717a' }}>{j.princi || '—'}</td>
+                  <td className="mono" style={{ fontSize: '12px', color: '#71717a' }}>{j.ejecutivo || '—'}</td>
                 </tr>
               ))}
               {pagData.length === 0 && (
-                <tr><td colSpan={10} style={{ textAlign: 'center', color: '#52525b', padding: '48px' }}>
+                <tr><td colSpan={23} style={{ textAlign: 'center', color: '#52525b', padding: '48px' }}>
                   No hay jugadores que coincidan con los filtros
                 </td></tr>
               )}
