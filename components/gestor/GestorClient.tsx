@@ -267,8 +267,17 @@ function GestorInner({ profile, historialInicial }: {
       }
     }
 
-    setCrmPreview(rows)
-    if (rows.length === 0) setCrmMsg({ type: 'err', text: 'No se detectaron sesiones en el archivo' })
+    // Deduplicar: un registro por (jugador_norm, tipo). Última ocurrencia gana
+    // (para múltiples principals en el mismo campo, el último match del regex es el más reciente)
+    const seen = new Map<string, { jugador: string; tipo: string; numero: number }>()
+    for (const r of rows) {
+      const key = `${r.jugador.toLowerCase().replace(/[\s_]/g, '')}:${r.tipo}`
+      seen.set(key, r)
+    }
+    const deduped = Array.from(seen.values())
+
+    setCrmPreview(deduped)
+    if (deduped.length === 0) setCrmMsg({ type: 'err', text: 'No se detectaron sesiones en el archivo' })
     else setCrmMsg(null)
   }
 
