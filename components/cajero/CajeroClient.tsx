@@ -407,7 +407,7 @@ export default function CajeroClient() {
             disabled={!jugador || !tipoBono || saving}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#111] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            {saving && <Loader2 className="animate-spin w-4 h-4" />}
             Guardar Bono
           </BorderGradientButton>
         </div>
@@ -601,7 +601,7 @@ export default function CajeroClient() {
                 disabled={!multiTipo || !multiUsuarios.trim() || multiSaving}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {multiSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {multiSaving && <Loader2 className="animate-spin w-4 h-4" />}
                 {multiSaving ? 'Guardando...' : 'Guardar para todos'}
               </BorderGradientButton>
             </div>

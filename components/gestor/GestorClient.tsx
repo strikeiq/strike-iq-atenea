@@ -521,7 +521,7 @@ function GestorInner({ profile, historialInicial }: {
                 disabled={!jugadorSel || !tipoBono || saving}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {saving && <Loader2 className="animate-spin w-4 h-4" />}
                 {saving ? 'Guardando...' : 'Guardar Bono'}
               </BorderGradientButton>
             </div>
@@ -628,7 +628,7 @@ function GestorInner({ profile, historialInicial }: {
                 disabled={!multiTipo || !multiUsuarios.trim() || multiSaving}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {multiSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {multiSaving && <Loader2 className="animate-spin w-4 h-4" />}
                 {multiSaving ? 'Guardando...' : 'Guardar para todos'}
               </BorderGradientButton>
             </div>
