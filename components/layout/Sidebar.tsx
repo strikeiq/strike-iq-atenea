@@ -4,17 +4,26 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/types'
+import { Button } from '@/components/ui/button'
+import {
+  LayoutDashboard,
+  Sparkles,
+  Users,
+  UploadCloud,
+  ArrowLeftRight,
+  CircleDot,
+} from 'lucide-react'
 
 const NAV_ADMIN = [
-  { href: '/dashboard', label: 'Dashboard', icon: '◈' },
-  { href: '/gestor',    label: 'Gestor Bonos', icon: '◆' },
-  { href: '/jugadores', label: 'Jugadores', icon: '◉' },
-  { href: '/reportes',  label: 'Cargar reporte', icon: '↑' },
-  { href: '/gestor?tab=importar', label: 'Importar CRM', icon: '⇄' },
+  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { href: '/gestor',    label: 'Gestor Bonos', Icon: Sparkles },
+  { href: '/jugadores', label: 'Jugadores', Icon: Users },
+  { href: '/reportes',  label: 'Cargar reporte', Icon: UploadCloud },
+  { href: '/gestor?tab=importar', label: 'Importar CRM', Icon: ArrowLeftRight },
 ]
 
 const NAV_CAJERO = [
-  { href: '/gestor', label: 'Gestor Bonos', icon: '◆' },
+  { href: '/gestor', label: 'Gestor Bonos', Icon: Sparkles },
 ]
 
 export default function Sidebar({ profile }: { profile: Profile }) {
@@ -56,7 +65,7 @@ export default function Sidebar({ profile }: { profile: Profile }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '30px', height: '30px', borderRadius: '7px',
-            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+            background: 'linear-gradient(135deg, #0f602f, #15803d)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '15px', fontWeight: '700', color: 'white', flexShrink: 0,
           }}>S</div>
@@ -87,7 +96,9 @@ export default function Sidebar({ profile }: { profile: Profile }) {
               background: active ? 'rgba(22,163,74,0.1)' : 'transparent',
               transition: 'all 0.1s',
             }}>
-              <span style={{ fontSize: '14px', opacity: active ? 1 : 0.6 }}>{item.icon}</span>
+              <item.Icon
+                style={{ width: '15px', height: '15px', opacity: active ? 1 : 0.6, flexShrink: 0 }}
+              />
               {item.label}
             </Link>
           )
@@ -103,14 +114,18 @@ export default function Sidebar({ profile }: { profile: Profile }) {
           <div style={{ fontSize: '13px', color: '#f4f4f5', fontWeight: '500' }}>
             {profile?.nombre || 'Usuario'}
           </div>
-          <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>
-            {profile?.role === 'admin' ? '● Admin' : '● Cajero'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#52525b', marginTop: '2px' }}>
+            <CircleDot style={{ width: '10px', height: '10px', color: '#22c55e' }} />
+            {profile?.role === 'admin' ? 'Admin' : 'Cajero'}
           </div>
         </div>
-        <button onClick={handleLogout} className="btn btn-secondary"
-          style={{ width: '100%', fontSize: '12px', padding: '7px 12px' }}>
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full text-xs h-8 border-[#2a2a2a] bg-transparent text-[#71717a] hover:text-[#f4f4f5] hover:bg-[#1a1a1a] hover:border-[#3a3a3a]"
+        >
           Cerrar sesión
-        </button>
+        </Button>
       </div>
     </aside>
   )

@@ -6,11 +6,45 @@ import { createClient } from '@/lib/supabase/client'
 import { TIPOS_BONO, CATEGORIAS_BONO, type TipoBono, type Contacto, type Profile, type Jugador } from '@/lib/types'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { BorderGradientButton } from '@/components/border-gradient'
+import {
+  Loader2,
+  Sparkles,
+  CircleDot,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ArrowLeftRight,
+  Trash2,
+  Search,
+} from 'lucide-react'
 
 // ── Helpers ──────────────────────────────────────────────────────
-function badge(tipo: string | null) {
+function badgeColor(tipo: string | null) {
   const colors: Record<string, string> = {
-    'RECURRENTES': '#16a34a', 'EXCLUSIVOS': '#2563eb', 'STRIKE VIP': '#7c3aed',
+    'RECURRENTES': '#0f602f', 'EXCLUSIVOS': '#2563eb', 'STRIKE VIP': '#7c3aed',
     'NUEVOS': '#0891b2', 'RECURRENTES VIPS': '#059669', 'POTENCIALES VIP': '#d97706',
     'INACTIVO': '#52525b', 'MIGRADO': '#9333ea',
   }
@@ -20,10 +54,15 @@ function badge(tipo: string | null) {
 // ── Sub-components ───────────────────────────────────────────────
 function BonoBadge({ tipo }: { tipo: string | null }) {
   if (!tipo) return <span style={{ color: '#52525b', fontSize: '12px' }}>—</span>
+  const color = badgeColor(tipo)
   return (
-    <span className="badge" style={{ background: badge(tipo) + '22', color: badge(tipo), border: `1px solid ${badge(tipo)}44` }}>
+    <Badge
+      variant="outline"
+      style={{ background: color + '22', color, border: `1px solid ${color}44` }}
+      className="text-[11px]"
+    >
       {tipo}
-    </span>
+    </Badge>
   )
 }
 
@@ -158,7 +197,7 @@ function GestorInner({ profile, historialInicial }: {
       })
       if (error) throw error
 
-      setMsg({ type: 'ok', text: `✓ Bono guardado para ${jugadorSel.jugador_original}` })
+      setMsg({ type: 'ok', text: `Bono guardado para ${jugadorSel.jugador_original}` })
       // Recargar historial
       const { data: h } = await supabase.from('contactos')
         .select('*').eq('cajero_id', profile.id)
@@ -322,14 +361,6 @@ function GestorInner({ profile, historialInicial }: {
     setCrmSaving(false)
   }
 
-  const TABS = [
-    { id: 'individual', label: 'Bono Individual' },
-    { id: 'multiple',   label: 'Bonos Múltiples' },
-    { id: 'importar',   label: 'Importar CRM' },
-    { id: 'historial',  label: `Historial` },
-    { id: 'eliminar',   label: 'Eliminar Usuario' },
-  ]
-
   return (
     <div className="fade-in">
       <div style={{ marginBottom: '24px' }}>
@@ -339,358 +370,445 @@ function GestorInner({ profile, historialInicial }: {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: '28px' }}>
-        {TABS.map(t => (
-          <button key={t.id} className={`tab-btn ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id as any)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={v => setTab(v as any)} className="w-full">
+        <TabsList className="bg-[#111] border border-[#1e1e1e] mb-7 flex-wrap h-auto gap-0.5 p-1">
+          <TabsTrigger value="individual" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a] text-[13px]">
+            Bono Individual
+          </TabsTrigger>
+          <TabsTrigger value="multiple" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a] text-[13px]">
+            Bonos Múltiples
+          </TabsTrigger>
+          <TabsTrigger value="importar" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a] text-[13px]">
+            Importar CRM
+          </TabsTrigger>
+          <TabsTrigger value="historial" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a] text-[13px]">
+            Historial
+          </TabsTrigger>
+          <TabsTrigger value="eliminar" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a] text-[13px]">
+            Eliminar Usuario
+          </TabsTrigger>
+        </TabsList>
 
-      {/* ── TAB: Bono Individual ── */}
-      {tab === 'individual' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '24px', alignItems: 'start' }}>
-          {/* Form */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Buscar jugador */}
-            <div className="card">
-              <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>
-                Buscar usuario
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  ref={searchRef}
-                  value={busqueda}
-                  onChange={e => { setBusqueda(e.target.value); setJugadorSel(null) }}
-                  placeholder="Nombre del jugador..."
-                  autoComplete="off"
-                />
-                {sugerencias.length > 0 && !jugadorSel && (
-                  <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                    background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px',
-                    marginTop: '4px', overflow: 'hidden',
-                  }}>
-                    {sugerencias.map(j => (
-                      <div key={j.jugador_norm}
-                        onClick={() => seleccionarJugador(j)}
-                        style={{
-                          padding: '10px 14px', cursor: 'pointer',
-                          borderBottom: '1px solid #222', fontSize: '13px',
-                          transition: 'background 0.1s',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#222')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <div>{j.jugador_original}</div>
-                        <div className="mono" style={{ fontSize: '11px', color: '#52525b' }}>{j.jugador_norm}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Tipo y Categoría */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Tipo de Bono</label>
-                <select value={tipoBono} onChange={e => setTipoBono(e.target.value as TipoBono)}>
-                  <option value="">Seleccionar...</option>
-                  {TIPOS_BONO.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Categoría de Bono</label>
-                <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {CATEGORIAS_BONO.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Monto a cargar (opcional)</label>
-                <input type="number" value={monto} onChange={e => setMonto(e.target.value)} placeholder="Ej: 10000" min="0" />
-              </div>
-            </div>
-
-            {/* Toggles */}
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { label: 'Bono usado', val: usado, set: setUsado },
-                { label: 'Respondió', val: respondio, set: setRespondio },
-              ].map(({ label, val, set }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '13px', color: '#a1a1aa' }}>{label}</span>
-                  <button onClick={() => set(!val)} style={{
-                    width: '42px', height: '22px', borderRadius: '11px', border: 'none',
-                    background: val ? '#16a34a' : '#333', cursor: 'pointer',
-                    position: 'relative', transition: 'background 0.2s',
-                  }}>
-                    <span style={{
-                      position: 'absolute', top: '3px',
-                      left: val ? '22px' : '3px',
-                      width: '16px', height: '16px', borderRadius: '50%',
-                      background: 'white', transition: 'left 0.2s',
-                    }} />
-                  </button>
+        {/* ── TAB: Bono Individual ── */}
+        <TabsContent value="individual">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '24px', alignItems: 'start' }}>
+            {/* Form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Buscar jugador */}
+              <div className="card">
+                <Label className="text-[12px] text-[#71717a] mb-1.5 block">
+                  Buscar usuario
+                </Label>
+                <div style={{ position: 'relative' }}>
+                  <Input
+                    ref={searchRef}
+                    value={busqueda}
+                    onChange={e => { setBusqueda(e.target.value); setJugadorSel(null) }}
+                    placeholder="Nombre del jugador..."
+                    autoComplete="off"
+                    className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
+                  />
+                  {sugerencias.length > 0 && !jugadorSel && (
+                    <div style={{
+                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                      background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px',
+                      marginTop: '4px', overflow: 'hidden',
+                    }}>
+                      {sugerencias.map(j => (
+                        <div key={j.jugador_norm}
+                          onClick={() => seleccionarJugador(j)}
+                          style={{
+                            padding: '10px 14px', cursor: 'pointer',
+                            borderBottom: '1px solid #222', fontSize: '13px',
+                            transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#222')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <div>{j.jugador_original}</div>
+                          <div className="mono" style={{ fontSize: '11px', color: '#52525b' }}>{j.jugador_norm}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
-              <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Notas (opcional)</label>
-                <textarea value={notas} onChange={e => setNotas(e.target.value)}
-                  placeholder="Observaciones..." rows={2}
-                  style={{ resize: 'vertical', minHeight: '60px' }} />
               </div>
-            </div>
 
-            {/* Mensaje */}
-            {msg && (
-              <div style={{
-                padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
-                background: msg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${msg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                color: msg.type === 'ok' ? '#22c55e' : '#ef4444',
-              }}>
-                {msg.text}
+              {/* Tipo y Categoría */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Tipo de Bono</Label>
+                  <Select value={tipoBono || '__none__'} onValueChange={v => setTipoBono(v === '__none__' ? '' : v as TipoBono)}>
+                    <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                      {TIPOS_BONO.map(t => (
+                        <SelectItem key={t} value={t} className="text-[#f4f4f5]">{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Categoría de Bono</Label>
+                  <Select value={categoria || '__none__'} onValueChange={v => setCategoria(v === '__none__' ? '' : v)}>
+                    <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                      {CATEGORIAS_BONO.map(c => (
+                        <SelectItem key={c} value={c} className="text-[#f4f4f5]">{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Monto a cargar (opcional)</Label>
+                  <Input
+                    type="number"
+                    value={monto}
+                    onChange={e => setMonto(e.target.value)}
+                    placeholder="Ej: 10000"
+                    min="0"
+                    className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
+                  />
+                </div>
               </div>
-            )}
 
-            <button className="btn btn-primary" onClick={guardarBono}
-              disabled={!jugadorSel || !tipoBono || saving}
-              style={{ fontSize: '14px', padding: '12px' }}>
-              {saving ? <span className="spinner" /> : '◆'}
-              {saving ? 'Guardando...' : 'Guardar Bono'}
-            </button>
-          </div>
-
-          {/* Player card */}
-          <div>
-            {jugadorSel ? (
-              <PlayerCard jugador={jugadorSel} bono={bonoJugador} />
-            ) : (
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', height: '240px',
-                background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px',
-                color: '#2a2a2a',
-              }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>◉</div>
-                <div style={{ fontSize: '13px', color: '#52525b' }}>Buscá un usuario para ver su información</div>
+              {/* Toggles */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-[#a1a1aa]">Bono usado</Label>
+                  <Switch checked={usado} onCheckedChange={setUsado} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-[#a1a1aa]">Respondió</Label>
+                  <Switch checked={respondio} onCheckedChange={setRespondio} />
+                </div>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Notas (opcional)</Label>
+                  <Textarea
+                    value={notas}
+                    onChange={e => setNotas(e.target.value)}
+                    placeholder="Observaciones..."
+                    rows={2}
+                    className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] resize-y min-h-[60px] focus-visible:ring-[#0f602f]"
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* ── TAB: Bonos Múltiples ── */}
-      {tab === 'multiple' && (
-        <div style={{ maxWidth: '560px' }}>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>
-                Usuarios (uno por línea)
-              </label>
-              <textarea
-                value={multiUsuarios}
-                onChange={e => setMultiUsuarios(e.target.value)}
-                placeholder={"usuario1\nusuario2\nusuario3"}
-                rows={8}
-                style={{ resize: 'vertical', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px' }}
-              />
-              <div style={{ fontSize: '11px', color: '#52525b', marginTop: '4px' }}>
-                {multiUsuarios.split('\n').filter(s => s.trim()).length} usuarios
-              </div>
-            </div>
+              {/* Mensaje */}
+              {msg && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
+                  background: msg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
+                  border: `1px solid ${msg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                  color: msg.type === 'ok' ? '#22c55e' : '#ef4444',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  {msg.type === 'ok'
+                    ? <CheckCircle className="w-4 h-4 shrink-0" />
+                    : <AlertCircle className="w-4 h-4 shrink-0" />
+                  }
+                  {msg.text}
+                </div>
+              )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Tipo de Bono</label>
-                <select value={multiTipo} onChange={e => setMultiTipo(e.target.value as TipoBono)}>
-                  <option value="">Seleccionar...</option>
-                  {TIPOS_BONO.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Categoría</label>
-                <select value={multiCategoria} onChange={e => setMultiCategoria(e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {CATEGORIAS_BONO.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Monto (opcional)</label>
-              <input type="number" value={multiMonto} onChange={e => setMultiMonto(e.target.value)} placeholder="Ej: 10000" />
-            </div>
-
-            {multiMsg && (
-              <div style={{
-                padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
-                background: multiMsg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${multiMsg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                color: multiMsg.type === 'ok' ? '#22c55e' : '#ef4444',
-              }}>
-                {multiMsg.text}
-              </div>
-            )}
-
-            <button className="btn btn-primary" onClick={guardarBonosMultiples}
-              disabled={!multiTipo || !multiUsuarios.trim() || multiSaving}>
-              {multiSaving ? <span className="spinner" /> : '◆'}
-              {multiSaving ? 'Guardando...' : 'Guardar para todos'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB: Importar CRM ── */}
-      {tab === 'importar' && (
-        <div style={{ maxWidth: '680px' }}>
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '14px', lineHeight: 1.6 }}>
-                Subí el CSV exportado del CRM. Se detectan automáticamente los PRINCI y WEBCHAT
-                de la columna <span className="mono" style={{ color: '#a1a1aa' }}>Sesiones</span>.
-              </p>
-              <label style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '32px',
-                cursor: 'pointer', transition: 'border-color 0.15s', gap: '8px',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#16a34a')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
+              <BorderGradientButton
+                onClick={guardarBono}
+                disabled={!jugadorSel || !tipoBono || saving}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span style={{ fontSize: '24px' }}>⇄</span>
-                <span style={{ fontSize: '14px', color: '#71717a' }}>
-                  {crmFile ? crmFile.name : 'Subir CSV del CRM'}
-                </span>
-                <input type="file" accept=".csv" style={{ display: 'none' }}
-                  onChange={e => {
-                    const f = e.target.files?.[0]
-                    if (!f) return
-                    setCrmFile(f); setCrmPreview([]); setCrmMsg(null)
-                    procesarCRM(f)
-                  }} />
-              </label>
+                {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {saving ? 'Guardando...' : 'Guardar Bono'}
+              </BorderGradientButton>
             </div>
 
-            {crmMsg && (
-              <div style={{
-                padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
-                background: crmMsg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${crmMsg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                color: crmMsg.type === 'ok' ? '#22c55e' : '#ef4444',
-              }}>
-                {crmMsg.text}
+            {/* Player card */}
+            <div>
+              {jugadorSel ? (
+                <PlayerCard jugador={jugadorSel} bono={bonoJugador} />
+              ) : (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', height: '240px',
+                  background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px',
+                  color: '#2a2a2a',
+                }}>
+                  <CircleDot style={{ width: '40px', height: '40px', marginBottom: '12px', opacity: 0.3 }} />
+                  <div style={{ fontSize: '13px', color: '#52525b' }}>Buscá un usuario para ver su información</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ── TAB: Bonos Múltiples ── */}
+        <TabsContent value="multiple">
+          <div style={{ maxWidth: '560px' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <Label className="text-[12px] text-[#71717a] mb-1.5 block">
+                  Usuarios (uno por línea)
+                </Label>
+                <Textarea
+                  value={multiUsuarios}
+                  onChange={e => setMultiUsuarios(e.target.value)}
+                  placeholder={"usuario1\nusuario2\nusuario3"}
+                  rows={8}
+                  className="bg-[#1a1a1a] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] font-mono text-[13px] resize-y focus-visible:ring-[#0f602f]"
+                />
+                <div style={{ fontSize: '11px', color: '#52525b', marginTop: '4px' }}>
+                  {multiUsuarios.split('\n').filter(s => s.trim()).length} usuarios
+                </div>
               </div>
-            )}
 
-            {crmPreview.length > 0 && (
-              <>
-                <div style={{ fontSize: '13px', color: '#71717a' }}>
-                  Vista previa — <strong style={{ color: '#f4f4f5' }}>{crmPreview.length}</strong> asignaciones detectadas
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Tipo de Bono</Label>
+                  <Select value={multiTipo || '__none__'} onValueChange={v => setMultiTipo(v === '__none__' ? '' : v as TipoBono)}>
+                    <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                      {TIPOS_BONO.map(t => (
+                        <SelectItem key={t} value={t} className="text-[#f4f4f5]">{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
-                  <table className="data-table">
-                    <thead>
-                      <tr><th>Jugador</th><th>Tipo</th><th>Número</th></tr>
-                    </thead>
-                    <tbody>
-                      {crmPreview.slice(0, 50).map((r, i) => {
-                        const badgeStyle =
-                          r.tipo === 'princi'        ? { background: '#1e3a1e', color: '#22c55e' } :
-                          r.tipo === 'webchat'       ? { background: '#1e2a3a', color: '#60a5fa' } :
-                          r.tipo === 'soporte_atenea'? { background: '#2a1e3a', color: '#c084fc' } :
-                          { background: '#2a2a1e', color: '#fbbf24' }
-                        const label =
-                          r.tipo === 'princi'         ? `PRINCI ${r.numero}` :
-                          r.tipo === 'webchat'        ? 'WEBCHAT' :
-                          r.tipo === 'soporte_atenea' ? 'SOPORTE ATENEA' : r.tipo.toUpperCase()
-                        return (
-                          <tr key={i}>
-                            <td>{r.jugador}</td>
-                            <td><span className="badge" style={badgeStyle}>{label}</span></td>
-                            <td className="mono">{r.tipo === 'princi' ? r.numero : '—'}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Categoría</Label>
+                  <Select value={multiCategoria || '__none__'} onValueChange={v => setMultiCategoria(v === '__none__' ? '' : v)}>
+                    <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                      {CATEGORIAS_BONO.map(c => (
+                        <SelectItem key={c} value={c} className="text-[#f4f4f5]">{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <button className="btn btn-primary" onClick={importarCRM} disabled={crmSaving}>
-                  {crmSaving ? <span className="spinner" /> : '⇄'}
-                  {crmSaving ? 'Importando...' : `Importar ${crmPreview.length} asignaciones`}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+              </div>
 
-      {/* ── TAB: Historial ── */}
-      {tab === 'historial' && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e1e1e' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600' }}>Mis últimos {historial.length} registros</span>
-          </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Jugador</th>
-                  <th>Tipo de Bono</th>
-                  <th>Categoría</th>
-                  <th>Monto</th>
-                  <th>Usado</th>
-                  <th>Respondió</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historial.map(c => (
-                  <tr key={c.id}>
-                    <td className="mono" style={{ fontSize: '12px', color: '#71717a', whiteSpace: 'nowrap' }}>
-                      {format(new Date(c.fecha), 'dd/MM HH:mm', { locale: es })}
-                    </td>
-                    <td style={{ fontWeight: '500' }}>{c.jugador}</td>
-                    <td><BonoBadge tipo={c.tipo_bono} /></td>
-                    <td className="mono" style={{ fontSize: '13px' }}>{c.categoria_bono || '—'}</td>
-                    <td className="mono">{c.monto ? `$${Number(c.monto).toLocaleString()}` : '—'}</td>
-                    <td>
-                      <span style={{ color: c.usado ? '#22c55e' : '#52525b', fontSize: '12px' }}>
-                        {c.usado ? '✓ Sí' : '✗ No'}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ color: c.respondio ? '#22c55e' : '#52525b', fontSize: '12px' }}>
-                        {c.respondio ? '✓ Sí' : '✗ No'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {historial.length === 0 && (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', color: '#52525b', padding: '40px' }}>
-                    Sin registros aún
-                  </td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+              <div>
+                <Label className="text-[12px] text-[#71717a] mb-1.5 block">Monto (opcional)</Label>
+                <Input
+                  type="number"
+                  value={multiMonto}
+                  onChange={e => setMultiMonto(e.target.value)}
+                  placeholder="Ej: 10000"
+                  className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
+                />
+              </div>
 
-      {/* ── TAB: Eliminar Usuario ── */}
-      {tab === 'eliminar' && profile.role === 'admin' && (
-        <EliminarUsuario supabase={supabase} />
-      )}
-      {tab === 'eliminar' && profile.role !== 'admin' && (
-        <div style={{ color: '#52525b', fontSize: '14px' }}>
-          Solo los administradores pueden eliminar usuarios.
-        </div>
-      )}
+              {multiMsg && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
+                  background: multiMsg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
+                  border: `1px solid ${multiMsg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                  color: multiMsg.type === 'ok' ? '#22c55e' : '#ef4444',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  {multiMsg.type === 'ok'
+                    ? <CheckCircle className="w-4 h-4 shrink-0" />
+                    : <AlertCircle className="w-4 h-4 shrink-0" />
+                  }
+                  {multiMsg.text}
+                </div>
+              )}
+
+              <BorderGradientButton
+                onClick={guardarBonosMultiples}
+                disabled={!multiTipo || !multiUsuarios.trim() || multiSaving}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {multiSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {multiSaving ? 'Guardando...' : 'Guardar para todos'}
+              </BorderGradientButton>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ── TAB: Importar CRM ── */}
+        <TabsContent value="importar">
+          <div style={{ maxWidth: '680px' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <p style={{ fontSize: '13px', color: '#71717a', marginBottom: '14px', lineHeight: 1.6 }}>
+                  Subí el CSV exportado del CRM. Se detectan automáticamente los PRINCI y WEBCHAT
+                  de la columna <span className="mono" style={{ color: '#a1a1aa' }}>Sesiones</span>.
+                </p>
+                <label style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  border: '2px dashed #2a2a2a', borderRadius: '10px', padding: '32px',
+                  cursor: 'pointer', transition: 'border-color 0.15s', gap: '8px',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#0f602f')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
+                >
+                  <ArrowLeftRight style={{ width: '24px', height: '24px', color: '#52525b' }} />
+                  <span style={{ fontSize: '14px', color: '#71717a' }}>
+                    {crmFile ? crmFile.name : 'Subir CSV del CRM'}
+                  </span>
+                  <input type="file" accept=".csv" style={{ display: 'none' }}
+                    onChange={e => {
+                      const f = e.target.files?.[0]
+                      if (!f) return
+                      setCrmFile(f); setCrmPreview([]); setCrmMsg(null)
+                      procesarCRM(f)
+                    }} />
+                </label>
+              </div>
+
+              {crmMsg && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
+                  background: crmMsg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
+                  border: `1px solid ${crmMsg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                  color: crmMsg.type === 'ok' ? '#22c55e' : '#ef4444',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  {crmMsg.type === 'ok'
+                    ? <CheckCircle className="w-4 h-4 shrink-0" />
+                    : <AlertCircle className="w-4 h-4 shrink-0" />
+                  }
+                  {crmMsg.text}
+                </div>
+              )}
+
+              {crmPreview.length > 0 && (
+                <>
+                  <div style={{ fontSize: '13px', color: '#71717a' }}>
+                    Vista previa — <strong style={{ color: '#f4f4f5' }}>{crmPreview.length}</strong> asignaciones detectadas
+                  </div>
+                  <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-[#1e1e1e]">
+                          <TableHead className="text-[#71717a]">Jugador</TableHead>
+                          <TableHead className="text-[#71717a]">Tipo</TableHead>
+                          <TableHead className="text-[#71717a]">Número</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {crmPreview.slice(0, 50).map((r, i) => {
+                          const badgeStyle =
+                            r.tipo === 'princi'         ? { background: '#1e3a1e', color: '#22c55e', border: '1px solid #22c55e33' } :
+                            r.tipo === 'webchat'        ? { background: '#1e2a3a', color: '#60a5fa', border: '1px solid #60a5fa33' } :
+                            r.tipo === 'soporte_atenea' ? { background: '#2a1e3a', color: '#c084fc', border: '1px solid #c084fc33' } :
+                            { background: '#2a2a1e', color: '#fbbf24', border: '1px solid #fbbf2433' }
+                          const label =
+                            r.tipo === 'princi'         ? `PRINCI ${r.numero}` :
+                            r.tipo === 'webchat'        ? 'WEBCHAT' :
+                            r.tipo === 'soporte_atenea' ? 'SOPORTE ATENEA' : r.tipo.toUpperCase()
+                          return (
+                            <TableRow key={i} className="border-[#1e1e1e] hover:bg-[#1a1a1a]">
+                              <TableCell>{r.jugador}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" style={badgeStyle} className="text-[11px]">
+                                  {label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="mono">{r.tipo === 'princi' ? r.numero : '—'}</TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <BorderGradientButton
+                    onClick={importarCRM}
+                    disabled={crmSaving}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {crmSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <ArrowLeftRight className="w-4 h-4" />}
+                    {crmSaving ? 'Importando...' : `Importar ${crmPreview.length} asignaciones`}
+                  </BorderGradientButton>
+                </>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ── TAB: Historial ── */}
+        <TabsContent value="historial">
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e1e1e' }}>
+              <span style={{ fontSize: '14px', fontWeight: '600' }}>Mis últimos {historial.length} registros</span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-[#1e1e1e] hover:bg-transparent">
+                    <TableHead className="text-[#71717a]">Fecha</TableHead>
+                    <TableHead className="text-[#71717a]">Jugador</TableHead>
+                    <TableHead className="text-[#71717a]">Tipo de Bono</TableHead>
+                    <TableHead className="text-[#71717a]">Categoría</TableHead>
+                    <TableHead className="text-[#71717a]">Monto</TableHead>
+                    <TableHead className="text-[#71717a]">Usado</TableHead>
+                    <TableHead className="text-[#71717a]">Respondió</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historial.map(c => (
+                    <TableRow key={c.id} className="border-[#1e1e1e] hover:bg-[#1a1a1a]">
+                      <TableCell className="mono" style={{ fontSize: '12px', color: '#71717a', whiteSpace: 'nowrap' }}>
+                        {format(new Date(c.fecha), 'dd/MM HH:mm', { locale: es })}
+                      </TableCell>
+                      <TableCell style={{ fontWeight: '500' }}>{c.jugador}</TableCell>
+                      <TableCell><BonoBadge tipo={c.tipo_bono} /></TableCell>
+                      <TableCell className="mono" style={{ fontSize: '13px' }}>{c.categoria_bono || '—'}</TableCell>
+                      <TableCell className="mono">{c.monto ? `$${Number(c.monto).toLocaleString()}` : '—'}</TableCell>
+                      <TableCell>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: c.usado ? '#22c55e' : '#52525b' }}>
+                          {c.usado
+                            ? <CheckCircle className="w-3.5 h-3.5" />
+                            : <XCircle className="w-3.5 h-3.5" />
+                          }
+                          {c.usado ? 'Sí' : 'No'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: c.respondio ? '#22c55e' : '#52525b' }}>
+                          {c.respondio
+                            ? <CheckCircle className="w-3.5 h-3.5" />
+                            : <XCircle className="w-3.5 h-3.5" />
+                          }
+                          {c.respondio ? 'Sí' : 'No'}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {historial.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} style={{ textAlign: 'center', color: '#52525b', padding: '40px' }}>
+                        Sin registros aún
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ── TAB: Eliminar Usuario ── */}
+        <TabsContent value="eliminar">
+          {profile.role === 'admin' ? (
+            <EliminarUsuario supabase={supabase} />
+          ) : (
+            <div style={{ color: '#52525b', fontSize: '14px' }}>
+              Solo los administradores pueden eliminar usuarios.
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
@@ -730,10 +848,21 @@ function EliminarUsuario({ supabase }: { supabase: ReturnType<typeof createClien
   return (
     <div style={{ maxWidth: '520px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div className="card" style={{ display: 'flex', gap: '10px' }}>
-        <input value={query} onChange={e => setQuery(e.target.value)}
+        <Input
+          value={query}
+          onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && buscar()}
-          placeholder="Buscar usuario a eliminar..." />
-        <button className="btn btn-secondary" onClick={buscar} style={{ flexShrink: 0 }}>Buscar</button>
+          placeholder="Buscar usuario a eliminar..."
+          className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
+        />
+        <Button
+          variant="outline"
+          onClick={buscar}
+          className="shrink-0 border-[#2a2a2a] bg-transparent text-[#71717a] hover:text-[#f4f4f5] hover:bg-[#1a1a1a]"
+        >
+          <Search className="w-4 h-4 mr-1.5" />
+          Buscar
+        </Button>
       </div>
 
       {msg && (
@@ -742,7 +871,14 @@ function EliminarUsuario({ supabase }: { supabase: ReturnType<typeof createClien
           background: msg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
           border: `1px solid ${msg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
           color: msg.type === 'ok' ? '#22c55e' : '#ef4444',
-        }}>{msg.text}</div>
+          display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+          {msg.type === 'ok'
+            ? <CheckCircle className="w-4 h-4 shrink-0" />
+            : <AlertCircle className="w-4 h-4 shrink-0" />
+          }
+          {msg.text}
+        </div>
       )}
 
       {jugadores.map(j => (
@@ -754,10 +890,18 @@ function EliminarUsuario({ supabase }: { supabase: ReturnType<typeof createClien
             <div style={{ fontSize: '14px', fontWeight: '500' }}>{j.jugador_original}</div>
             <div className="mono" style={{ fontSize: '11px', color: '#52525b' }}>{j.jugador_norm}</div>
           </div>
-          <button className="btn btn-danger" onClick={() => eliminar(j)}
-            disabled={deleting === j.jugador_norm} style={{ fontSize: '12px', padding: '6px 12px' }}>
-            {deleting === j.jugador_norm ? <span className="spinner" /> : 'Eliminar'}
-          </button>
+          <Button
+            variant="destructive"
+            onClick={() => eliminar(j)}
+            disabled={deleting === j.jugador_norm}
+            className="text-[12px] h-8 px-3"
+          >
+            {deleting === j.jugador_norm
+              ? <Loader2 className="animate-spin w-3.5 h-3.5 mr-1.5" />
+              : <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            }
+            Eliminar
+          </Button>
         </div>
       ))}
     </div>

@@ -3,6 +3,17 @@
 import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { format } from 'date-fns'
+import { BorderGradientButton } from '@/components/border-gradient'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { UploadCloud, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 
 // Normalización igual que Supabase
 function normalizarJugador(nombre: string) {
@@ -112,7 +123,7 @@ export default function ReportesClient({ lotesRecientes }: { lotesRecientes: any
       // Refrescar jugadores
       await supabase.rpc('refresh_jugadores')
       setProgress(100)
-      setMsg({ type: 'ok', text: `✓ ${processed.length} transacciones cargadas correctamente` })
+      setMsg({ type: 'ok', text: `${processed.length} transacciones cargadas correctamente` })
       setFile(null); setPreview([]); setStats(null)
     } catch (e: any) {
       setMsg({ type: 'err', text: e.message })
@@ -138,7 +149,7 @@ export default function ReportesClient({ lotesRecientes }: { lotesRecientes: any
             onDragLeave={() => setIsDrag(false)}
             onDrop={e => { e.preventDefault(); setIsDrag(false); const f = e.dataTransfer.files[0]; if (f) processFile(f) }}
             style={{
-              border: `2px dashed ${isDrag ? '#16a34a' : file ? '#16a34a44' : '#2a2a2a'}`,
+              border: `2px dashed ${isDrag ? '#0f602f' : file ? '#0f602f44' : '#2a2a2a'}`,
               borderRadius: '12px', padding: '48px 24px',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
               cursor: 'pointer', transition: 'all 0.15s',
@@ -146,7 +157,12 @@ export default function ReportesClient({ lotesRecientes }: { lotesRecientes: any
               position: 'relative',
             }}
           >
-            <div style={{ fontSize: '32px' }}>↑</div>
+            <UploadCloud
+              style={{
+                width: '32px', height: '32px',
+                color: file ? '#22c55e' : '#52525b',
+              }}
+            />
             <div style={{ fontSize: '14px', color: '#a1a1aa', textAlign: 'center' }}>
               {file ? (
                 <>
@@ -184,7 +200,7 @@ export default function ReportesClient({ lotesRecientes }: { lotesRecientes: any
 
           {progress > 0 && progress < 100 && (
             <div style={{ background: '#1a1a1a', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: '#16a34a', width: `${progress}%`, transition: 'width 0.3s', borderRadius: '6px' }} />
+              <div style={{ height: '100%', background: '#0f602f', width: `${progress}%`, transition: 'width 0.3s', borderRadius: '6px' }} />
             </div>
           )}
 
@@ -194,43 +210,75 @@ export default function ReportesClient({ lotesRecientes }: { lotesRecientes: any
               background: msg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
               border: `1px solid ${msg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
               color: msg.type === 'ok' ? '#22c55e' : '#ef4444',
-            }}>{msg.text}</div>
+              display: 'flex', alignItems: 'center', gap: '8px',
+            }}>
+              {msg.type === 'ok'
+                ? <CheckCircle className="w-4 h-4 shrink-0" />
+                : <AlertCircle className="w-4 h-4 shrink-0" />
+              }
+              {msg.text}
+            </div>
           )}
 
-          <button className="btn btn-primary" onClick={uploadFile}
+          <BorderGradientButton
+            onClick={uploadFile}
             disabled={!stats || loading}
-            style={{ fontSize: '14px', padding: '12px' }}>
-            {loading ? <span className="spinner" /> : '↑'}
-            {loading ? `Subiendo... ${progress}%` : `Subir ${stats?.total?.toLocaleString() ?? ''} transacciones`}
-          </button>
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading
+              ? <Loader2 className="animate-spin w-4 h-4" />
+              : <UploadCloud className="w-4 h-4" />
+            }
+            {loading
+              ? `Subiendo... ${progress}%`
+              : `Subir ${stats?.total?.toLocaleString() ?? ''} transacciones`
+            }
+          </BorderGradientButton>
 
           {/* Preview */}
           {preview.length > 0 && (
             <div>
               <div style={{ fontSize: '12px', color: '#52525b', marginBottom: '8px' }}>Vista previa (primeras 5 filas)</div>
               <div style={{ overflowX: 'auto' }}>
-                <table className="data-table" style={{ fontSize: '12px' }}>
-                  <thead>
-                    <tr><th>Op</th><th>Jugador</th><th>Depositar</th><th>Fecha</th></tr>
-                  </thead>
-                  <tbody>
+                <Table style={{ fontSize: '12px' }}>
+                  <TableHeader>
+                    <TableRow className="border-[#1e1e1e]">
+                      <TableHead className="text-[#71717a]">Op</TableHead>
+                      <TableHead className="text-[#71717a]">Jugador</TableHead>
+                      <TableHead className="text-[#71717a]">Depositar</TableHead>
+                      <TableHead className="text-[#71717a]">Fecha</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {preview.map((r, i) => (
-                      <tr key={i}>
-                        <td><span style={{ color: r.operacion === 'in' ? '#22c55e' : '#f59e0b', fontSize: '11px', fontWeight: '600' }}>{r.operacion.toUpperCase()}</span></td>
-                        <td>{r.jugador}</td>
-                        <td className="mono">{r.operacion === 'in' ? `$${r.depositar.toLocaleString()}` : `$${r.retirar.toLocaleString()}`}</td>
-                        <td className="mono">{r.fecha}</td>
-                      </tr>
+                      <TableRow key={i} className="border-[#1e1e1e] hover:bg-[#1a1a1a]">
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={r.operacion === 'in'
+                              ? 'text-[11px] bg-transparent border-[#22c55e44] text-[#22c55e]'
+                              : 'text-[11px] bg-transparent border-[#f59e0b44] text-[#f59e0b]'
+                            }
+                          >
+                            {r.operacion.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{r.jugador}</TableCell>
+                        <TableCell className="mono">
+                          {r.operacion === 'in' ? `$${r.depositar.toLocaleString()}` : `$${r.retirar.toLocaleString()}`}
+                        </TableCell>
+                        <TableCell className="mono">{r.fecha}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
         </div>
 
         {/* Historial de cargas */}
-        <div className="card">
+        <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '20px' }}>
           <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>
             Últimas cargas
           </div>
@@ -253,9 +301,12 @@ export default function ReportesClient({ lotesRecientes }: { lotesRecientes: any
                       {format(new Date(l.created_at), 'dd/MM/yyyy HH:mm')}
                     </div>
                   </div>
-                  <span className="badge mono" style={{ background: '#1e3a1e', color: '#22c55e' }}>
+                  <Badge
+                    variant="outline"
+                    className="mono bg-[#1e3a1e] text-[#22c55e] border-[#22c55e33]"
+                  >
                     {l.count.toLocaleString()} tx
-                  </span>
+                  </Badge>
                 </div>
               ))}
             </div>

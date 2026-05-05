@@ -5,6 +5,13 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
+const CARD = {
+  background: '#111',
+  border: '1px solid #2a2a2a',
+  borderRadius: '12px',
+  padding: '20px',
+} as const
+
 function fmt(n: number) {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
@@ -15,11 +22,8 @@ function StatCard({ label, value, sub, color = '#22c55e' }: {
   label: string; value: string; sub?: string; color?: string
 }) {
   return (
-    <div className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
-        background: color,
-      }} />
+    <div style={{ ...CARD, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: color }} />
       <div style={{ fontSize: '12px', color: '#71717a', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {label}
       </div>
@@ -44,7 +48,6 @@ export default function DashboardClient({ stats, topJugadores, actividad7d }: {
   topJugadores: any[]
   actividad7d: any[]
 }) {
-  // Agrupar actividad por día
   const chartData = useMemo(() => {
     const byDay: Record<string, { depositar: number; retirar: number }> = {}
     actividad7d.forEach((r: any) => {
@@ -66,9 +69,7 @@ export default function DashboardClient({ stats, topJugadores, actividad7d }: {
     <div className="fade-in">
       <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#f4f4f5' }}>Dashboard</h1>
-        <p style={{ color: '#52525b', fontSize: '13px', marginTop: '4px' }}>
-          Atenea · últimos 30 días
-        </p>
+        <p style={{ color: '#52525b', fontSize: '13px', marginTop: '4px' }}>Atenea · últimos 30 días</p>
       </div>
 
       {/* Stats grid */}
@@ -83,7 +84,7 @@ export default function DashboardClient({ stats, topJugadores, actividad7d }: {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px' }}>
         {/* Chart */}
-        <div className="card">
+        <div style={CARD}>
           <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '20px' }}>
             Actividad últimos 7 días
           </div>
@@ -96,7 +97,7 @@ export default function DashboardClient({ stats, topJugadores, actividad7d }: {
                   tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={TOOLTIP_STYLE}
                   formatter={(v: number) => [`$${v.toLocaleString()}`, '']} />
-                <Bar dataKey="Depósitos" fill="#16a34a" radius={[3,3,0,0]} />
+                <Bar dataKey="Depósitos" fill="#0f602f" radius={[3,3,0,0]} />
                 <Bar dataKey="Retiros"   fill="#374151" radius={[3,3,0,0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -108,10 +109,8 @@ export default function DashboardClient({ stats, topJugadores, actividad7d }: {
         </div>
 
         {/* Top jugadores */}
-        <div className="card">
-          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>
-            Top jugadores
-          </div>
+        <div style={CARD}>
+          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>Top jugadores</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {topJugadores.slice(0, 8).map((j: any, i: number) => {
               const maxGanancia = topJugadores[0]?.ganancia_casino || 1
@@ -123,12 +122,10 @@ export default function DashboardClient({ stats, topJugadores, actividad7d }: {
                       <span className="mono" style={{ color: '#52525b', marginRight: '8px' }}>{String(i+1).padStart(2,'0')}</span>
                       {j.jugador_original}
                     </span>
-                    <span className="mono" style={{ fontSize: '12px', color: '#22c55e' }}>
-                      {fmt(j.ganancia_casino)}
-                    </span>
+                    <span className="mono" style={{ fontSize: '12px', color: '#22c55e' }}>{fmt(j.ganancia_casino)}</span>
                   </div>
                   <div style={{ height: '2px', background: '#1e1e1e', borderRadius: '1px' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: '#16a34a', borderRadius: '1px', transition: 'width 0.5s' }} />
+                    <div style={{ height: '100%', width: `${pct}%`, background: '#0f602f', borderRadius: '1px', transition: 'width 0.5s' }} />
                   </div>
                 </div>
               )

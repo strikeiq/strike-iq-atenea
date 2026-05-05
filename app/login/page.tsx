@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { BorderGradientButton } from '@/components/border-gradient'
+import { Loader2, LogIn, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -58,7 +62,7 @@ export default function LoginPage() {
           }}>
             <div style={{
               width: '36px', height: '36px', borderRadius: '8px',
-              background: 'linear-gradient(135deg, #16a34a, #15803d)',
+              background: 'linear-gradient(135deg, #0f602f, #15803d)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '18px', fontWeight: '700', color: 'white',
             }}>S</div>
@@ -80,32 +84,36 @@ export default function LoginPage() {
             Iniciar sesión
           </h2>
 
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#a1a1aa', marginBottom: '6px' }}>
+              <Label htmlFor="email" className="text-[#a1a1aa] text-[13px] mb-1.5 block">
                 Email
-              </label>
-              <input
+              </Label>
+              <Input
+                id="email"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="tu@email.com"
                 required
                 autoComplete="email"
+                className="bg-[#1a1a1a] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f] focus-visible:border-[#0f602f]"
               />
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#a1a1aa', marginBottom: '6px' }}>
+              <Label htmlFor="password" className="text-[#a1a1aa] text-[13px] mb-1.5 block">
                 Contraseña
-              </label>
-              <input
+              </Label>
+              <Input
+                id="password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
+                className="bg-[#1a1a1a] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f] focus-visible:border-[#0f602f]"
               />
             </div>
 
@@ -118,16 +126,26 @@ export default function LoginPage() {
                 marginBottom: '16px',
                 fontSize: '13px',
                 color: '#ef4444',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
               }}>
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={loading}
-              style={{ width: '100%' }}>
-              {loading ? <span className="spinner" /> : null}
+            <BorderGradientButton
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading
+                ? <Loader2 className="animate-spin w-4 h-4" />
+                : <LogIn className="w-4 h-4" />
+              }
               {loading ? 'Ingresando...' : 'Ingresar'}
-            </button>
+            </BorderGradientButton>
           </form>
         </div>
       </div>

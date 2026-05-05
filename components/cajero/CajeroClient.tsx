@@ -3,6 +3,29 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { TIPOS_BONO, CATEGORIAS_BONO, type TipoBono, type Jugador } from '@/lib/types'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { BorderGradientButton } from '@/components/border-gradient'
+import {
+  Loader2,
+  Sparkles,
+  UserCircle,
+  CircleDot,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────
 interface RegistroBono {
@@ -24,9 +47,9 @@ interface Contacto {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
-function badge(tipo: string | null) {
+function badgeColor(tipo: string | null) {
   const colors: Record<string, string> = {
-    'RECURRENTES': '#16a34a', 'EXCLUSIVOS': '#2563eb', 'STRIKE VIP': '#7c3aed',
+    'RECURRENTES': '#0f602f', 'EXCLUSIVOS': '#2563eb', 'STRIKE VIP': '#7c3aed',
     'NUEVOS': '#0891b2', 'RECURRENTES VIPS': '#059669', 'POTENCIALES VIP': '#d97706',
     'INACTIVO': '#52525b', 'MIGRADO': '#9333ea',
   }
@@ -38,14 +61,16 @@ function fmt(date: string) {
 }
 
 // ── Stat item ─────────────────────────────────────────────────────
-function Stat({ icon, value, label }: { icon: string; value: string | number; label: string }) {
+function Stat({ Icon, value, label }: { Icon: React.ElementType; value: string | number; label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
       <div style={{
         width: '36px', height: '36px', borderRadius: '50%',
-        background: '#16a34a22', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', flexShrink: 0,
-      }}>{icon}</div>
+        background: '#0f602f22', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <Icon style={{ width: '16px', height: '16px', color: '#22c55e' }} />
+      </div>
       <div>
         <div style={{ fontSize: '18px', fontWeight: '700', lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize: '12px', color: '#71717a', marginTop: '2px' }}>{label}</div>
@@ -78,7 +103,7 @@ function BonoRow({ c, onUpdate }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '13px', color: '#a1a1aa' }}>{fmt(c.fecha)}</span>
           {c.tipo_bono && (
-            <span style={{ fontSize: '12px', fontWeight: '600', color: badge(c.tipo_bono) }}>
+            <span style={{ fontSize: '12px', fontWeight: '600', color: badgeColor(c.tipo_bono) }}>
               {c.tipo_bono}
             </span>
           )}
@@ -87,27 +112,27 @@ function BonoRow({ c, onUpdate }: {
           )}
           <span style={{
             fontSize: '11px', padding: '2px 8px', borderRadius: '12px', fontWeight: '500',
-            background: c.usado ? '#16a34a22' : '#d9770622',
+            background: c.usado ? '#0f602f22' : '#d9770622',
             color: c.usado ? '#22c55e' : '#f97316',
-            border: `1px solid ${c.usado ? '#16a34a44' : '#d9770644'}`,
+            border: `1px solid ${c.usado ? '#0f602f44' : '#d9770644'}`,
           }}>
             {c.usado ? 'Usado' : 'Pendiente'}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <input
+          <Input
             type="number"
             value={monto}
             onChange={e => setMonto(e.target.value)}
             onBlur={() => saveField({ monto: monto ? parseFloat(monto) : null })}
             placeholder="Monto"
-            style={{ width: '90px', padding: '4px 8px', fontSize: '13px', textAlign: 'right' }}
+            className="w-[90px] h-8 text-[13px] text-right bg-[#1a1a1a] border-[#2a2a2a] text-[#f4f4f5]"
           />
           <input
             type="checkbox"
             checked={c.usado}
             onChange={e => saveField({ usado: e.target.checked })}
-            style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#16a34a' }}
+            style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0f602f' }}
           />
         </div>
       </div>
@@ -116,7 +141,7 @@ function BonoRow({ c, onUpdate }: {
           type="checkbox"
           checked={c.respondio}
           onChange={e => saveField({ respondio: e.target.checked })}
-          style={{ width: '14px', height: '14px', cursor: 'pointer', accentColor: '#16a34a' }}
+          style={{ width: '14px', height: '14px', cursor: 'pointer', accentColor: '#0f602f' }}
         />
         <span style={{ fontSize: '12px', color: '#71717a' }}>Respondió</span>
       </div>
@@ -135,7 +160,6 @@ export default function CajeroClient() {
   const [bono, setBono] = useState<RegistroBono | null>(null)
   const [contactos, setContactos] = useState<Contacto[]>([])
   const [filtro, setFiltro] = useState<'todos' | 'pendientes' | 'usados'>('todos')
-  const [tab, setTab] = useState<'individual' | 'multiple'>('individual')
 
   const [tipoBono, setTipoBono] = useState<TipoBono | ''>('')
   const [categoria, setCategoria] = useState('')
@@ -268,16 +292,14 @@ export default function CajeroClient() {
     return true
   })
 
-  const s: React.CSSProperties = {
-    minHeight: '100dvh',
-    background: '#0a0a0a',
-    color: '#f4f4f5',
-    fontFamily: 'system-ui, sans-serif',
-    padding: '32px',
-  }
-
   return (
-    <div style={s}>
+    <div style={{
+      minHeight: '100dvh',
+      background: '#0a0a0a',
+      color: '#f4f4f5',
+      fontFamily: 'system-ui, sans-serif',
+      padding: '32px',
+    }}>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0 }}>Gestor Atenea</h1>
@@ -291,24 +313,25 @@ export default function CajeroClient() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr', gap: '16px', alignItems: 'end', marginBottom: '16px' }}>
           {/* ID Usuario */}
           <div>
-            <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>ID Usuario</label>
-            <input
+            <Label className="text-[12px] text-[#71717a] mb-1.5 block">ID Usuario</Label>
+            <Input
               readOnly
               value={jugador?.jugador_norm ?? ''}
               placeholder=""
-              style={{ background: '#1a1a1a', cursor: 'default' }}
+              className="bg-[#1a1a1a] border-[#2a2a2a] text-[#f4f4f5] cursor-default"
             />
           </div>
 
           {/* Usuario (search) */}
           <div ref={dropRef} style={{ position: 'relative' }}>
-            <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Usuario</label>
-            <input
+            <Label className="text-[12px] text-[#71717a] mb-1.5 block">Usuario</Label>
+            <Input
               value={busqueda}
               onChange={e => { setBusqueda(e.target.value); setJugador(null) }}
               placeholder="Nombre del usuario..."
               autoComplete="off"
-              style={{ borderColor: jugador ? '#16a34a' : undefined }}
+              className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
+              style={{ borderColor: jugador ? '#0f602f' : undefined }}
             />
             {sugerencias.length > 0 && !jugador && (
               <div style={{
@@ -333,13 +356,14 @@ export default function CajeroClient() {
 
           {/* Monto */}
           <div>
-            <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Monto a cargar (opcional)</label>
-            <input
+            <Label className="text-[12px] text-[#71717a] mb-1.5 block">Monto a cargar (opcional)</Label>
+            <Input
               type="number"
               value={monto}
               onChange={e => setMonto(e.target.value)}
               placeholder="Ej: 10000"
               min="0"
+              className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
             />
           </div>
         </div>
@@ -347,35 +371,45 @@ export default function CajeroClient() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '16px', alignItems: 'end' }}>
           {/* Tipo de Bono */}
           <div>
-            <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Tipo de Bono</label>
-            <select value={tipoBono} onChange={e => setTipoBono(e.target.value as TipoBono)}>
-              <option value="">Seleccionar...</option>
-              {TIPOS_BONO.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <Label className="text-[12px] text-[#71717a] mb-1.5 block">Tipo de Bono</Label>
+            <Select value={tipoBono || '__none__'} onValueChange={v => setTipoBono(v === '__none__' ? '' : v as TipoBono)}>
+              <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                <SelectValue placeholder="Seleccionar..." />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                {TIPOS_BONO.map(t => (
+                  <SelectItem key={t} value={t} className="text-[#f4f4f5]">{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Categoría de Bono */}
           <div>
-            <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Categoría de Bono</label>
-            <select value={categoria} onChange={e => setCategoria(e.target.value)}>
-              <option value="">Seleccionar...</option>
-              {CATEGORIAS_BONO.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <Label className="text-[12px] text-[#71717a] mb-1.5 block">Categoría de Bono</Label>
+            <Select value={categoria || '__none__'} onValueChange={v => setCategoria(v === '__none__' ? '' : v)}>
+              <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                <SelectValue placeholder="Seleccionar..." />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                {CATEGORIAS_BONO.map(c => (
+                  <SelectItem key={c} value={c} className="text-[#f4f4f5]">{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Guardar */}
-          <button
+          <BorderGradientButton
             onClick={guardarBono}
             disabled={!jugador || !tipoBono || saving}
-            style={{
-              background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px',
-              padding: '10px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
-              opacity: (!jugador || !tipoBono || saving) ? 0.5 : 1,
-            }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#111] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {saving ? '...' : '💾'} Guardar Bono
-          </button>
+            {saving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            Guardar Bono
+          </BorderGradientButton>
         </div>
 
         {msg && (
@@ -384,37 +418,30 @@ export default function CajeroClient() {
             background: msg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
             border: `1px solid ${msg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
             color: msg.type === 'ok' ? '#22c55e' : '#ef4444',
+            display: 'flex', alignItems: 'center', gap: '8px',
           }}>
+            {msg.type === 'ok'
+              ? <CheckCircle className="w-4 h-4 shrink-0" />
+              : <AlertCircle className="w-4 h-4 shrink-0" />
+            }
             {msg.text}
           </div>
         )}
       </div>
 
       {/* ── Tabs ── */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid #1e1e1e', paddingBottom: '0' }}>
-        {[
-          { id: 'individual', label: 'Bono Individual' },
-          { id: 'multiple', label: 'Bonos Múltiples' },
-        ].map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id as any)}
-            style={{
-              background: 'none', border: 'none', color: tab === t.id ? '#22c55e' : '#71717a',
-              fontSize: '14px', fontWeight: tab === t.id ? '600' : '400',
-              padding: '8px 16px', cursor: 'pointer',
-              borderBottom: tab === t.id ? '2px solid #22c55e' : '2px solid transparent',
-              marginBottom: '-1px',
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs defaultValue="individual" className="w-full">
+        <TabsList className="bg-[#111] border border-[#1e1e1e] mb-6">
+          <TabsTrigger value="individual" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a]">
+            Bono Individual
+          </TabsTrigger>
+          <TabsTrigger value="multiple" className="data-[state=active]:bg-[#1a1a1a] data-[state=active]:text-[#22c55e] text-[#71717a]">
+            Bonos Múltiples
+          </TabsTrigger>
+        </TabsList>
 
-      {/* ── TAB: Bono Individual ── */}
-      {tab === 'individual' && (
-        <>
+        {/* ── TAB: Bono Individual ── */}
+        <TabsContent value="individual">
           {jugador ? (
             <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', alignItems: 'start' }}>
               {/* Stats del jugador */}
@@ -425,18 +452,19 @@ export default function CajeroClient() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{
                     width: '44px', height: '44px', borderRadius: '50%',
-                    background: '#16a34a33', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '20px',
-                  }}>👤</div>
+                    background: '#0f602f33', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <UserCircle style={{ width: '24px', height: '24px', color: '#22c55e' }} />
+                  </div>
                   <div>
                     <div style={{ fontWeight: '700', fontSize: '15px' }}>{jugador.jugador_original}</div>
                     <div style={{ fontSize: '12px', color: '#71717a' }}>Usuario registrado</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <Stat icon="📩" value={bono?.bonos_ofrecidos ?? 0} label="Bonos Ofrecidos" />
-                  <Stat icon="✅" value={bono?.bonos_usados ?? 0} label="Bonos Usados" />
-                  <Stat icon="📅" value={jugador.ultima_tx ? new Date(jugador.ultima_tx).toLocaleDateString('es-AR') : '—'} label="Última Carga" />
+                  <Stat Icon={Sparkles} value={bono?.bonos_ofrecidos ?? 0} label="Bonos Ofrecidos" />
+                  <Stat Icon={CheckCircle} value={bono?.bonos_usados ?? 0} label="Bonos Usados" />
+                  <Stat Icon={CircleDot} value={jugador.ultima_tx ? new Date(jugador.ultima_tx).toLocaleDateString('es-AR') : '—'} label="Última Carga" />
                 </div>
               </div>
 
@@ -448,18 +476,19 @@ export default function CajeroClient() {
                   <span style={{ fontWeight: '600', fontSize: '15px' }}>Bonos del Usuario</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
                     {(['todos', 'pendientes', 'usados'] as const).map(f => (
-                      <button
+                      <Button
                         key={f}
+                        size="sm"
+                        variant={filtro === f ? 'default' : 'outline'}
                         onClick={() => setFiltro(f)}
-                        style={{
-                          padding: '4px 12px', borderRadius: '6px', border: 'none',
-                          fontSize: '12px', fontWeight: '500', cursor: 'pointer',
-                          background: filtro === f ? '#16a34a' : '#1e1e1e',
-                          color: filtro === f ? 'white' : '#71717a',
-                        }}
+                        className={
+                          filtro === f
+                            ? 'text-[12px] h-7 bg-[#0f602f] hover:bg-[#15803d] text-white border-transparent'
+                            : 'text-[12px] h-7 border-[#2a2a2a] bg-transparent text-[#71717a] hover:text-[#f4f4f5] hover:bg-[#1e1e1e]'
+                        }
                       >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -482,81 +511,103 @@ export default function CajeroClient() {
               height: '240px', background: '#111', border: '1px solid #1e1e1e', borderRadius: '12px',
               color: '#52525b',
             }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>◉</div>
+              <CircleDot style={{ width: '40px', height: '40px', marginBottom: '12px', opacity: 0.3 }} />
               <div style={{ fontSize: '13px' }}>Buscá un usuario para ver su información</div>
             </div>
           )}
-        </>
-      )}
+        </TabsContent>
 
-      {/* ── TAB: Bonos Múltiples ── */}
-      {tab === 'multiple' && (
-        <div style={{ maxWidth: '560px' }}>
-          <div style={{
-            background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px',
-            padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px',
-          }}>
-            <div>
-              <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>
-                Usuarios (uno por línea)
-              </label>
-              <textarea
-                value={multiUsuarios}
-                onChange={e => setMultiUsuarios(e.target.value)}
-                placeholder={'usuario1\nusuario2\nusuario3'}
-                rows={8}
-                style={{ resize: 'vertical', fontFamily: 'monospace', fontSize: '13px' }}
-              />
-              <div style={{ fontSize: '11px', color: '#52525b', marginTop: '4px' }}>
-                {multiUsuarios.split('\n').filter(s => s.trim()).length} usuarios
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        {/* ── TAB: Bonos Múltiples ── */}
+        <TabsContent value="multiple">
+          <div style={{ maxWidth: '560px' }}>
+            <div style={{
+              background: '#111', border: '1px solid #2a2a2a', borderRadius: '10px',
+              padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px',
+            }}>
               <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Tipo de Bono</label>
-                <select value={multiTipo} onChange={e => setMultiTipo(e.target.value as TipoBono)}>
-                  <option value="">Seleccionar...</option>
-                  {TIPOS_BONO.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <Label className="text-[12px] text-[#71717a] mb-1.5 block">
+                  Usuarios (uno por línea)
+                </Label>
+                <Textarea
+                  value={multiUsuarios}
+                  onChange={e => setMultiUsuarios(e.target.value)}
+                  placeholder={'usuario1\nusuario2\nusuario3'}
+                  rows={8}
+                  className="bg-[#1a1a1a] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] font-mono text-[13px] resize-y focus-visible:ring-[#0f602f]"
+                />
+                <div style={{ fontSize: '11px', color: '#52525b', marginTop: '4px' }}>
+                  {multiUsuarios.split('\n').filter(s => s.trim()).length} usuarios
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Tipo de Bono</Label>
+                  <Select value={multiTipo || '__none__'} onValueChange={v => setMultiTipo(v === '__none__' ? '' : v as TipoBono)}>
+                    <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                      {TIPOS_BONO.map(t => (
+                        <SelectItem key={t} value={t} className="text-[#f4f4f5]">{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[12px] text-[#71717a] mb-1.5 block">Categoría</Label>
+                  <Select value={multiCategoria || '__none__'} onValueChange={v => setMultiCategoria(v === '__none__' ? '' : v)}>
+                    <SelectTrigger className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5]">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1a] border-[#2a2a2a]">
+                      <SelectItem value="__none__" className="text-[#71717a]">Seleccionar...</SelectItem>
+                      {CATEGORIAS_BONO.map(c => (
+                        <SelectItem key={c} value={c} className="text-[#f4f4f5]">{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
-                <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Categoría</label>
-                <select value={multiCategoria} onChange={e => setMultiCategoria(e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {CATEGORIAS_BONO.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <Label className="text-[12px] text-[#71717a] mb-1.5 block">Monto (opcional)</Label>
+                <Input
+                  type="number"
+                  value={multiMonto}
+                  onChange={e => setMultiMonto(e.target.value)}
+                  placeholder="Ej: 10000"
+                  className="bg-[#111] border-[#2a2a2a] text-[#f4f4f5] placeholder:text-[#52525b] focus-visible:ring-[#0f602f]"
+                />
               </div>
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', color: '#71717a', display: 'block', marginBottom: '6px' }}>Monto (opcional)</label>
-              <input type="number" value={multiMonto} onChange={e => setMultiMonto(e.target.value)} placeholder="Ej: 10000" />
-            </div>
 
-            {multiMsg && (
-              <div style={{
-                padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
-                background: multiMsg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
-                border: `1px solid ${multiMsg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                color: multiMsg.type === 'ok' ? '#22c55e' : '#ef4444',
-              }}>
-                {multiMsg.text}
-              </div>
-            )}
+              {multiMsg && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
+                  background: multiMsg.type === 'ok' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
+                  border: `1px solid ${multiMsg.type === 'ok' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                  color: multiMsg.type === 'ok' ? '#22c55e' : '#ef4444',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  {multiMsg.type === 'ok'
+                    ? <CheckCircle className="w-4 h-4 shrink-0" />
+                    : <AlertCircle className="w-4 h-4 shrink-0" />
+                  }
+                  {multiMsg.text}
+                </div>
+              )}
 
-            <button
-              onClick={guardarBonosMultiples}
-              disabled={!multiTipo || !multiUsuarios.trim() || multiSaving}
-              style={{
-                background: '#16a34a', color: 'white', border: 'none', borderRadius: '8px',
-                padding: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-                opacity: (!multiTipo || !multiUsuarios.trim() || multiSaving) ? 0.5 : 1,
-              }}
-            >
-              {multiSaving ? 'Guardando...' : 'Guardar para todos'}
-            </button>
+              <BorderGradientButton
+                onClick={guardarBonosMultiples}
+                disabled={!multiTipo || !multiUsuarios.trim() || multiSaving}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#111] text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {multiSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {multiSaving ? 'Guardando...' : 'Guardar para todos'}
+              </BorderGradientButton>
+            </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
