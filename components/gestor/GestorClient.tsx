@@ -300,15 +300,21 @@ function GestorInner({ profile, historialInicial }: {
 
     const BATCH = 500
     let ok = 0, err = 0
+    const errMsgs: string[] = []
 
     for (let i = 0; i < records.length; i += BATCH) {
       const { error } = await supabase.from('asignaciones')
         .upsert(records.slice(i, i + BATCH), { onConflict: 'jugador_norm' })
-      if (error) err += Math.min(BATCH, records.length - i)
-      else ok += Math.min(BATCH, records.length - i)
+      if (error) {
+        err += Math.min(BATCH, records.length - i)
+        if (!errMsgs.includes(error.message)) errMsgs.push(error.message)
+      } else {
+        ok += Math.min(BATCH, records.length - i)
+      }
     }
 
-    setCrmMsg({ type: ok > 0 ? 'ok' : 'err', text: `${ok} asignaciones importadas · ${err} errores` })
+    const errDetail = errMsgs.length ? ` — ${errMsgs[0]}` : ''
+    setCrmMsg({ type: ok > 0 ? 'ok' : 'err', text: `${ok} asignaciones importadas · ${err} errores${errDetail}` })
     if (ok > 0) { setCrmPreview([]); setCrmFile(null) }
     setCrmSaving(false)
   }
