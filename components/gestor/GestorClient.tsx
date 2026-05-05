@@ -287,14 +287,24 @@ function GestorInner({ profile, historialInicial }: {
   async function importarCRM() {
     if (!crmPreview.length) return
     setCrmSaving(true)
+
+    const records = crmPreview.map(r => ({
+      jugador_norm: r.jugador.toLowerCase().replace(/[\s_]/g, ''),
+      jugador: r.jugador,
+      tipo: r.tipo,
+      numero: r.numero,
+    }))
+
+    const BATCH = 500
     let ok = 0, err = 0
-    for (const r of crmPreview) {
-      const norm = r.jugador.toLowerCase().replace(/[\s_]/g, '')
-      const { error } = await supabase.from('asignaciones').upsert({
-        jugador_norm: norm, jugador: r.jugador, tipo: r.tipo, numero: r.numero,
-      }, { onConflict: 'jugador_norm' })
-      if (error) err++; else ok++
+
+    for (let i = 0; i < records.length; i += BATCH) {
+      const { error } = await supabase.from('asignaciones')
+        .upsert(records.slice(i, i + BATCH), { onConflict: 'jugador_norm' })
+      if (error) err += Math.min(BATCH, records.length - i)
+      else ok += Math.min(BATCH, records.length - i)
     }
+
     setCrmMsg({ type: ok > 0 ? 'ok' : 'err', text: `${ok} asignaciones importadas · ${err} errores` })
     if (ok > 0) { setCrmPreview([]); setCrmFile(null) }
     setCrmSaving(false)
