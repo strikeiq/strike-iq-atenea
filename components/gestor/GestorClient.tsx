@@ -239,7 +239,8 @@ function GestorInner({ profile, historialInicial }: {
     const pWebchat = /\bWEBCHAT\b/i
     const pSoporte = /\bSOPORTE\s+ATENEA\b/i
 
-    const rows: { jugador: string; tipo: string; numero: number }[] = []
+    // prioridad: 1=webchat, 2=soporte_atenea sesión, 3=princi, 4=soporte_atenea etiqueta
+    const rows: { jugador: string; tipo: string; numero: number; p: number }[] = []
 
     for (const line of rawLines.slice(1)) {
       if (!line.trim()) continue
@@ -251,36 +252,38 @@ function GestorInner({ profile, historialInicial }: {
       if (!nombres.length) continue
 
       for (const nombre of nombres) {
-        // PRINCI / Principal con número (de Sesiones)
+        // WEBCHAT (de Etiquetas) — prioridad 1
+        if (pWebchat.test(etiquetas)) {
+          rows.push({ jugador: nombre, tipo: 'webchat', numero: 1, p: 1 })
+        }
+
+        // Soporte Atenea de Sesiones — prioridad 2
+        if (pSoporte.test(sesiones)) {
+          rows.push({ jugador: nombre, tipo: 'soporte_atenea', numero: 1, p: 2 })
+        }
+
+        // PRINCI de Sesiones — prioridad 3
         let m
         pPrinci.lastIndex = 0
         while ((m = pPrinci.exec(sesiones)) !== null) {
-          rows.push({ jugador: nombre, tipo: 'princi', numero: parseInt(m[1]) })
+          rows.push({ jugador: nombre, tipo: 'princi', numero: parseInt(m[1]), p: 3 })
         }
 
-        // WEBCHAT (de Etiquetas)
-        if (pWebchat.test(etiquetas)) {
-          rows.push({ jugador: nombre, tipo: 'webchat', numero: 1 })
-        }
-
-        // Soporte Atenea (de Sesiones, sin número)
-        if (pSoporte.test(sesiones)) {
-          rows.push({ jugador: nombre, tipo: 'soporte_atenea', numero: 1 })
+        // Soporte Atenea de Etiquetas — prioridad 4 (más baja)
+        if (pSoporte.test(etiquetas)) {
+          rows.push({ jugador: nombre, tipo: 'soporte_atenea', numero: 1, p: 4 })
         }
       }
     }
 
-    // Deduplicar: un registro por jugador_norm.
-    // webchat gana sobre cualquier princi; entre princi/princi gana el último.
-    const seen = new Map<string, { jugador: string; tipo: string; numero: number }>()
+    // Deduplicar: un registro por jugador_norm. Gana el de menor p (mayor prioridad).
+    const seen = new Map<string, { jugador: string; tipo: string; numero: number; p: number }>()
     for (const r of rows) {
       const key = r.jugador.toLowerCase().replace(/[\s_]/g, '')
       const existing = seen.get(key)
-      if (!existing || r.tipo === 'webchat' || existing.tipo !== 'webchat') {
-        seen.set(key, r)
-      }
+      if (!existing || r.p < existing.p) seen.set(key, r)
     }
-    const deduped = Array.from(seen.values())
+    const deduped = Array.from(seen.values()).map(({ p: _, ...r }) => r)
 
     setCrmPreview(deduped)
     if (deduped.length === 0) setCrmMsg({ type: 'err', text: 'No se detectaron sesiones en el archivo' })
