@@ -244,26 +244,29 @@ function GestorInner({ profile, historialInicial }: {
     for (const line of rawLines.slice(1)) {
       if (!line.trim()) continue
       const cols = parseCsvLine(line)
-      const nombre    = (cols[colNombre]    || '').replace(/^"|"$/g, '').trim()
+      const nombreRaw = (cols[colNombre] || '').replace(/^"|"$/g, '').trim()
+      const nombres   = [...new Set(nombreRaw.split(/[\r\n\s]+/).filter(Boolean))]
       const sesiones  = (cols[colSesiones]  || '').replace(/^"|"$/g, '').trim()
       const etiquetas = colEtiquetas >= 0 ? (cols[colEtiquetas] || '').replace(/^"|"$/g, '').trim() : ''
-      if (!nombre) continue
+      if (!nombres.length) continue
 
-      // PRINCI / Principal con número (de Sesiones)
-      let m
-      pPrinci.lastIndex = 0
-      while ((m = pPrinci.exec(sesiones)) !== null) {
-        rows.push({ jugador: nombre, tipo: 'princi', numero: parseInt(m[1]) })
-      }
+      for (const nombre of nombres) {
+        // PRINCI / Principal con número (de Sesiones)
+        let m
+        pPrinci.lastIndex = 0
+        while ((m = pPrinci.exec(sesiones)) !== null) {
+          rows.push({ jugador: nombre, tipo: 'princi', numero: parseInt(m[1]) })
+        }
 
-      // WEBCHAT (de Etiquetas)
-      if (pWebchat.test(etiquetas)) {
-        rows.push({ jugador: nombre, tipo: 'webchat', numero: 1 })
-      }
+        // WEBCHAT (de Etiquetas)
+        if (pWebchat.test(etiquetas)) {
+          rows.push({ jugador: nombre, tipo: 'webchat', numero: 1 })
+        }
 
-      // Soporte Atenea (de Sesiones, sin número)
-      if (pSoporte.test(sesiones)) {
-        rows.push({ jugador: nombre, tipo: 'soporte_atenea', numero: 1 })
+        // Soporte Atenea (de Sesiones, sin número)
+        if (pSoporte.test(sesiones)) {
+          rows.push({ jugador: nombre, tipo: 'soporte_atenea', numero: 1 })
+        }
       }
     }
 
