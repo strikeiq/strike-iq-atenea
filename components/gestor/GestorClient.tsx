@@ -270,12 +270,15 @@ function GestorInner({ profile, historialInicial }: {
       }
     }
 
-    // Deduplicar: un registro por (jugador_norm, tipo). Última ocurrencia gana
-    // (para múltiples principals en el mismo campo, el último match del regex es el más reciente)
+    // Deduplicar: un registro por jugador_norm.
+    // webchat gana sobre cualquier princi; entre princi/princi gana el último.
     const seen = new Map<string, { jugador: string; tipo: string; numero: number }>()
     for (const r of rows) {
-      const key = `${r.jugador.toLowerCase().replace(/[\s_]/g, '')}:${r.tipo}`
-      seen.set(key, r)
+      const key = r.jugador.toLowerCase().replace(/[\s_]/g, '')
+      const existing = seen.get(key)
+      if (!existing || r.tipo === 'webchat' || existing.tipo !== 'webchat') {
+        seen.set(key, r)
+      }
     }
     const deduped = Array.from(seen.values())
 
